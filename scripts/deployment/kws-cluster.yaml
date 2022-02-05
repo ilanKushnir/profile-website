@@ -1,0 +1,67 @@
+---
+# profile-website-namespace
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: profile-website
+  labels:
+    name: profile-website
+---
+# profile-website-deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: profile-website-deployment
+  namespace: profile-website
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: profile-website
+  template:
+    metadata:
+      labels:
+        app: profile-website
+    spec:
+      containers:
+        - name: profile-website
+          image: nginx:stable
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: web
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              port: web
+              path: /
+---
+# profile-website-service
+apiVersion: v1
+kind: Service
+metadata:
+  name: profile-website-service
+  namespace: profile-website
+spec:
+  ports:
+    - protocol: TCP
+      name: web
+      port: 80
+  selector:
+    app: profile-website
+---
+# profile-website-ingress
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: profile-website-ingress
+  namespace: profile-website
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`ilankushnir.com`)
+      kind: Rule
+      services:
+        - name: profile-website-service
+          port: 80
